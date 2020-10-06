@@ -1,6 +1,6 @@
 # Pulse
 This project aims to track the trend of word usage in [bioRxiv](https://www.biorxiv.org/) over time.
-Search for a term and view a plot of it's occurance over time - essentially the pulse of this the term. try it out [here](https://msbradshaw.github.io/Pulse/).
+Search for a term and view a plot of it's occurance over time - essentially the pulse of this the term. Try it out [here](https://msbradshaw.github.io/Pulse/)!
 
 ## Want to contribute?
 Here are some things that could be added
