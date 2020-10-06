@@ -1,0 +1,39 @@
+body{
+	font-family: sans-serif;
+
+}
+h1{
+	text-align: center;
+}
+h1 span{
+	font-size: 24px;
+	font-weight: normal;
+	font-style: italic;
+}
+
+.search_term_form{
+	margin: 0 auto;
+	font-size: 30px;
+	line-height: 30px;
+	width: fit-content;
+}
+.search_term_form input{
+	height: 40px;
+	line-height: 40px;
+	font-size: 30px;
+}
+.search_term_form button{
+	height: 45px;
+	font-size: 30px;
+}
+.search_term_form button:hover{
+	cursor: pointer;
+	opacity: .8;
+}
+
+.plot{
+	width: 1000px;
+	height: 700px;
+	opacity: .8;
+	margin: 0 auto;
+}

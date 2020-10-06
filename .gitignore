@@ -1,0 +1,14 @@
+.idea/
+*.csv
+geckodriver.log
+url-errors.txt
+venv/
+*.db
+.DS_Store
+database/__pycache__/
+aggregate-data/logs/
+database/get-rds-dump.sh
+*not_important_info.txt
+lambda-package/package
+__pycache__
+lambda.zip

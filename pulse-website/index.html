@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>Pulse</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link href="style.css" rel="stylesheet">
+	<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+
+	<h1>Pulse: <span>Biorxiv word trends</span></h1>
+	<form class="search_term_form">
+		<label for="search_terms">Enter Search Terms</label>
+		<input type="text" name="search_terms" value="" id="search_terms">
+		<button type="submit" name="button" id="plot_button">Plot</button>
+	</form>
+	<div class="plot" id="plot"></div>
+
+	<script src="plotting.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,117 @@
+body{
+	font-family: sans-serif;
+
+}
+h1{
+	text-align: center;
+}
+h1 span{
+	font-size: 24px;
+	font-weight: normal;
+	font-style: italic;
+}
+
+.search_term_form{
+	margin: 0 auto;
+	font-size: 30px;
+	line-height: 30px;
+	width: fit-content;
+	width: -moz-fit-content;
+}
+.search_term_form input{
+	height: 40px;
+	width: 300px;
+	line-height: 40px;
+	font-size: 30px;
+	border: 2px solid #666666;
+    border-radius: 5px;
+}
+.search_term_form button{
+	height: 45px;
+	font-size: 30px;
+}
+.search_term_form button:hover{
+	cursor: pointer;
+	opacity: .8;
+}
+
+.plot{
+	/* width: 1000px;
+	height: 700px; */
+	opacity: .8;
+	margin: 0 auto;
+}
+
+.heart_wrapper{
+	width: 150px;
+	height: 150px;
+	margin: 100px auto;
+}
+
+#heart_wrapper {
+	opacity: 0;
+}
+
+.heart_wrapper img{
+  animation: createBox 1.5s infinite;
+  width: 150px;
+  height: 150px;
+}
+@keyframes createBox {
+  from {
+    transform: scale(.5);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@-webkit-keyframes createBox {
+  from {
+    transform: scale(.5);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+/* full size CSS */
+@media (min-width:1000px) {
+	.plot{
+		width: 1000px;
+		height: 700px;
+		opacity: 1;
+		margin: 0 auto;
+	}
+	#block_plot {
+		display: none;
+	}
+}
+
+/* Mobile CSS */
+@media (max-width:999px) {
+	.plot{
+		max-width: 100%;
+		height: 350px;
+		opacity: 1;
+		margin: 0 auto;
+	}
+	.search_term_form {
+	    display: grid;
+	    text-align: center;
+	}
+	.search_term_form button{
+		border: 2px solid #666666;
+		border-radius: 5px;
+	}
+	.modebar-container {
+		display: none;
+	}
+	#block_plot {
+		position: absolute;
+		width: 100%;
+		z-index: 1;
+		height: 400px;
+		opacity: 0;
+	}
+}
