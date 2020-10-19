@@ -9,6 +9,14 @@ function removeElementsByClass(className){
 var cache = {};
 var plotting_data = {};
 
+var layout = {
+    yaxis: {
+        title: {
+            text: 'Number of bioRxiv articles',
+        }
+    }
+};
+
 document.getElementById("plot_button").addEventListener("click", function(e){
 	e.preventDefault();
 	// clear old plotting data
@@ -21,7 +29,7 @@ document.getElementById("plot_button").addEventListener("click", function(e){
 	var search_terms = document.getElementById("search_terms").value.replace(/, +/g,',').split(',')
 
 	// send a POST request for each term individually (the api can handle multiple terms at time, but this speeds it up)
-	plotting_data = {'data':[]};
+	plotting_data = {'data':[],'layout':layout};
 	for(var i in search_terms){
 		term = search_terms[i];
 		// check if the term is in the front end cache
