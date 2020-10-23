@@ -9,6 +9,7 @@ function removeElementsByClass(className){
 var cache = {};
 var plotting_data = {};
 
+// layout used on all plots to add y axis label
 var layout = {
     yaxis: {
         title: {
@@ -20,18 +21,24 @@ var layout = {
 document.getElementById("plot_button").addEventListener("click", function(e){
 	e.preventDefault();
 	// clear old plotting data
-	plotting_data = {'data':[]};
+	plotting_data = {'data':[],'layout':layout,'config':{}};
+
 	// show the beating heart
 	document.getElementById('heart_wrapper').style.opacity = 1;
+
 	// remove the old plot
 	removeElementsByClass('plot-container')
+
 	//get search terms from the input field
 	var search_terms = document.getElementById("search_terms").value.replace(/, +/g,',').split(',')
 
-	// send a POST request for each term individually (the api can handle multiple terms at time, but this speeds it up)
-	plotting_data = {'data':[],'layout':layout};
+    // plotting data template object, rather than sending these 3 things as individual parameter they are sent as bundled as 1 object
+    plotting_data = {'data':[],'layout':layout,'config':{}};
+
+    // send a POST request for each term individually (the api can handle multiple terms at time and this speeds it up)
 	for(var i in search_terms){
 		term = search_terms[i];
+        
 		// check if the term is in the front end cache
 		if(term in cache){
 			console.log('Cache')
@@ -40,7 +47,7 @@ document.getElementById("plot_button").addEventListener("click", function(e){
 			// only show the plot if all the search terms are ready
 			if(plotting_data['data'].length == search_terms.length){
 				document.getElementById('heart_wrapper').style.opacity = 0;
-				Plotly.newPlot('plot',  plotting_data,{staticPlot: true});
+				Plotly.newPlot('plot',  plotting_data);
 			}
 		}else{
 			console.log('API')
@@ -59,8 +66,7 @@ document.getElementById("plot_button").addEventListener("click", function(e){
 				// add term to the cache
 				cache[term] = data['data'][0]
 				document.getElementById('heart_wrapper').style.opacity = 0;
-				console.log(plotting_data)
-				Plotly.newPlot('plot',  plotting_data,config={'displayModeBar':false,staticPlot: true});
+				Plotly.newPlot('plot',  plotting_data);
 			});
 		}
 	}
