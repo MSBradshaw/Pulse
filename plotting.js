@@ -7,6 +7,8 @@ function removeElementsByClass(className){
 
 // a simple front end cache
 var cache = {};
+
+// creating global variable for the plotting data
 var plotting_data = {};
 
 // layout used on all plots to add y axis label
@@ -38,12 +40,14 @@ document.getElementById("plot_button").addEventListener("click", function(e){
     // send a POST request for each term individually (the api can handle multiple terms at time and this speeds it up)
 	for(var i in search_terms){
 		term = search_terms[i];
-        
+
 		// check if the term is in the front end cache
 		if(term in cache){
 			console.log('Cache')
-			// do not make a POST request, just pull from the cache
+
+            // do not make a POST request, just pull from the cache
 			plotting_data['data'].push(cache[term])
+
 			// only show the plot if all the search terms are ready
 			if(plotting_data['data'].length == search_terms.length){
 				document.getElementById('heart_wrapper').style.opacity = 0;
@@ -58,15 +62,23 @@ document.getElementById("plot_button").addEventListener("click", function(e){
 					alert('Well this is awkward...\nAn error has occurred while searching for "' + term + '"\nTry refreshing the page and searching for a new term');
 					document.getElementById('heart_wrapper').style.opacity = 0;
 				}
+                // if the search term returns no results, alert the user
 				if( data['data'][0]['x'].length == 0 ){
 					alert(term + ' has no results');
 				}
+
+                // define type of plot to be used on data
 				data['data'][0]['mode'] = 'lines';
 				plotting_data['data'].push(data['data'][0])
-				// add term to the cache
+
+                // add term to the cache
 				cache[term] = data['data'][0]
-				document.getElementById('heart_wrapper').style.opacity = 0;
-				Plotly.newPlot('plot',  plotting_data);
+
+                // hide the beating heart
+                document.getElementById('heart_wrapper').style.opacity = 0;
+
+                // plot it!
+                Plotly.newPlot('plot',  plotting_data);
 			});
 		}
 	}
