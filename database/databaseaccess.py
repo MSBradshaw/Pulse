@@ -85,7 +85,7 @@ class DataBaseAccess:
         for line in open('not_important_info.txt'):
             info.append(line.strip())
         host = info[0]
-        port = 3306
+        port = int(info[4])
         user = info[1]
         password = info[2]
         db = info[3]

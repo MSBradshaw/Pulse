@@ -117,77 +117,83 @@ Append errors or successes to logfile
 
 def get_page(url, outputfile, logfile, collection_name, is_update=False):
     print_verbose('Doing Page: ' + url)
-    html = requests.get(url, verify=False).text
-    soup = BeautifulSoup(html, 'html.parser')
-    article_list = soup.find_all('a', {'class': 'highwire-cite-linked-title'}, href=True)
+    for i in range(1,3):
+        if i > 1:
+            print('Attempt:', str(i))
+        html = requests.get(url, verify=False).text
+        soup = BeautifulSoup(html, 'html.parser')
+        article_list = soup.find_all('a', {'class': 'highwire-cite-linked-title'}, href=True)
 
-    base_biorxiv_url = 'https://www.biorxiv.org'
-    output = pd.DataFrame()
-    for a in article_list:
-        dictionary = get_single_article(base_biorxiv_url + a['href'], logfile)
-        # check if there was an error in getting the article
-        if dictionary is not -1:
-            output = output.append(dictionary, ignore_index=True)
+        base_biorxiv_url = 'https://www.biorxiv.org'
+        output = pd.DataFrame()
+        for a in article_list:
+            dictionary = get_single_article(base_biorxiv_url + a['href'], logfile)
+            # check if there was an error in getting the article
+            if dictionary is not -1:
+                output = output.append(dictionary, ignore_index=True)
 
-    output = output[['date', 'title', 'authors', 'url', 'abstract']]
-    output['date'] = [date_to_unix_time(x) for x in list(output['date'])]
-    if not is_update:
-        # go ahead and save all the information to the csv
-        output.to_csv(output, mode='a', header=False)
-        # not an error but log the success
-        log_error(logfile, 'Complete List Page', url)
-        # return True so the calling function knows to continue scraping
-        return True
-    # add the subcategory to the DataFrame in the last column position
-    output['subcategory'] = collection_name
-    # check if it is already in the DB
-    db = DataBaseAccess()
-    # set it to be using UTF-8 to allow for special characters
-    db.cursor.execute("SET collation_connection = 'utf8_general_ci';")
-    statement_template = "SELECT article_id FROM articles WHERE title='{the_title}' AND publish_date={the_date};"
-    articles_to_save = output.copy()
-    indexes_to_drop = []
-    for i in range(output.shape[0]):
-        title = clean_for_sql(output.iloc[i, :]['title'])
-        date = output.iloc[i, :]['date']
-        sql_statement = statement_template.format(the_title=title, the_date=date)
-        print_verbose(sql_statement)
-        db.cursor.execute(sql_statement)
-        results = db.cursor.fetchall()
-        if len(results) < 1:
-            # the articles does not exist
-            pass
-        else:
-            # the article is already found
-            indexes_to_drop.append(i)
-            print_verbose('\tArticle already Exists')
-
-            # add it to the db
-
-    # drop the articles that already exist
-    print_verbose('\tDropping:' + str(indexes_to_drop))
-    articles_to_save = articles_to_save.drop(articles_to_save.index[indexes_to_drop])
-
-    # add the good articles to the db
-    if articles_to_save.shape[0] > 0:
-        print_verbose('\tAdding')
-        print_verbose(articles_to_save)
-        add_articles(db.connection, articles_to_save)
-        # remove the sub category column before adding it to the csv as this is not part of the original schema
-        articles_to_save = articles_to_save.drop(columns=['subcategory'])
-        # append new articles to the csv
-        articles_to_save.to_csv(outputfile, mode='a', header=False)
-        # not an error but log the success
-        log_error(logfile, 'Complete List Page', url)
-        if articles_to_save.shape[0] == output.shape[0]:
-            # if all the articles were new, return true so the next page is collected too
+        # if there is no output, reattempt it
+        if output.shape[0] == 0:
+            continue
+        output = output[['date', 'title', 'authors', 'url', 'abstract']]
+        output['date'] = [date_to_unix_time(x) for x in list(output['date'])]
+        if not is_update:
+            # go ahead and save all the information to the csv
+            output.to_csv(outputfile, mode='a', header=False)
+            # not an error but log the success
+            log_error(logfile, 'Complete List Page', url)
+            # return True so the calling function knows to continue scraping
             return True
+        # add the subcategory to the DataFrame in the last column position
+        output['subcategory'] = collection_name
+        # check if it is already in the DB
+        db = DataBaseAccess()
+        # set it to be using UTF-8 to allow for special characters
+        db.cursor.execute("SET collation_connection = 'utf8_general_ci';")
+        statement_template = "SELECT article_id FROM articles WHERE title='{the_title}' AND publish_date={the_date};"
+        articles_to_save = output.copy()
+        indexes_to_drop = []
+        for i in range(output.shape[0]):
+            title = clean_for_sql(output.iloc[i, :]['title'])
+            date = output.iloc[i, :]['date']
+            sql_statement = statement_template.format(the_title=title, the_date=date)
+            print_verbose(sql_statement)
+            db.cursor.execute(sql_statement)
+            results = db.cursor.fetchall()
+            if len(results) < 1:
+                # the articles does not exist
+                pass
+            else:
+                # the article is already found
+                indexes_to_drop.append(i)
+                print_verbose('\tArticle already Exists')
+
+                # add it to the db
+
+        # drop the articles that already exist
+        print_verbose('\tDropping:' + str(indexes_to_drop))
+        articles_to_save = articles_to_save.drop(articles_to_save.index[indexes_to_drop])
+
+        # add the good articles to the db
+        if articles_to_save.shape[0] > 0:
+            print_verbose('\tAdding')
+            print_verbose(articles_to_save)
+            add_articles(db.connection, articles_to_save)
+            # remove the sub category column before adding it to the csv as this is not part of the original schema
+            articles_to_save = articles_to_save.drop(columns=['subcategory'])
+            # append new articles to the csv
+            articles_to_save.to_csv(outputfile, mode='a', header=False)
+            # not an error but log the success
+            log_error(logfile, 'Complete List Page', url)
+            if articles_to_save.shape[0] == output.shape[0]:
+                # if all the articles were new, return true so the next page is collected too
+                return True
+            else:
+                # if only some of the articles were new, return false so the next page is not gathered
+                return False
         else:
-            # if only some of the articles were new, return false so the next page is not gathered
+            # return False as is there were no new articles
             return False
-    else:
-        # return False as is there were no new articles
-        return False
 
 
 # get_page('https://www.biorxiv.org/collection/bioinformatics?page=0','aggregate-data/CSVs/bioinformatics.csv','aggregate-data/logs/bioinformatics.txt')
@@ -196,7 +202,6 @@ def get_page(url, outputfile, logfile, collection_name, is_update=False):
 """
 Function used to call get_page in a async multiprocess way
 """
-
 
 def start_func(params):
     start = params[0]
@@ -226,7 +231,7 @@ def get_collection(url, outputfile, logfile, collection_name):
     last = int(last.text)
     # make list of parameter lists for parallel runs, chunking by 25s
     param_lists = [
-        [i, i + 24, url, outputfile, logfile, collection_name] if i + 24 < last else [i, last, url, outputfile, logfile]
+        [i, i + 24, url, outputfile, logfile, collection_name] if i + 24 < last else [i, last, url, outputfile, logfile, collection_name]
         for i
         in range(0, last, 25)]
     pool = mp.Pool(processes=12)
@@ -309,4 +314,4 @@ def get_all_collections(update=False):
 # get_page('https://www.biorxiv.org/collection/bioengineering?page=7','delete.csv','delete.log','bioengineering', True)
 # update_collection('https://www.biorxiv.org/collection/bioengineering', 'delete.csv', 'delete.log', 'bioengineering')
 
-get_all_collections(True)
+get_all_collections(False)
