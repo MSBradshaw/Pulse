@@ -4,12 +4,13 @@ import time
 import datetime
 from os import listdir
 import pymysql
+from datetime import date
 
 VERBOSE = False
 
 
 def clean_for_sql(string):
-    string = string.replace("'","''")
+    string = string.replace("'", "''")
     string = string.replace('"', '""')
     return string
 
@@ -29,8 +30,9 @@ def print_verbose(string):
 def date_to_unix_time(date):
     if date == 'Fail':
         return -1
-    dt = datetime.datetime.strptime(date, '%B %d, %Y')
+    dt = datetime.datetime.strptime(date, '%Y-%m-%d')
     return int(time.mktime(dt.timetuple()))
+
 
 """
 Give the path to a file
@@ -43,17 +45,22 @@ Returns a pandas DataFrame
 
 
 def load_data(filepath):
-    df = pd.read_csv(filepath, header=None)
-    df.columns = ['index', 'publish_date', 'title', 'authors', 'url', 'abstract']
-    df['publish_date'] = [ date_to_unix_time(x) for x in df['publish_date']]
-    df = df.drop(['index'], axis=1)
+    df = pd.read_csv(filepath, sep='\t')
+    print(df.shape)
+    # df.columns = ['index', 'publish_date', 'title', 'authors', 'url', 'abstract']
+    df.columns = ['doi', 'title', 'abstract', 'server', 'category', 'publish_date']
+
+    df['publish_date'] = [date_to_unix_time(x) for x in df['publish_date']]
+    # df = df.drop(['index'], axis=1)
     df = df.drop_duplicates()
     # remove rows that have missing data
-    df = df[pd.notnull(df['abstract'])]
-    df = df[pd.notnull(df['publish_date'])]
+    df = df[pd.notnull(df['doi'])]
     df = df[pd.notnull(df['title'])]
-    df = df[pd.notnull(df['authors'])]
-    df = df[pd.notnull(df['url'])]
+    df = df[pd.notnull(df['abstract'])]
+    df = df[pd.notnull(df['server'])]
+    df = df[pd.notnull(df['category'])]
+    df = df[pd.notnull(df['publish_date'])]
+    print(df.shape)
     return df
 
 
@@ -88,7 +95,7 @@ def open_db():
     for line in open('not_important_info.txt'):
         info.append(line.strip())
     host = info[0]
-    port = 3306
+    port = int(info[4])
     user = info[1]
     password = info[2]
     db = info[3]
@@ -113,11 +120,11 @@ def create_db(connection):
     create_articles_statement = """CREATE TABLE IF NOT EXISTS articles (
         article_id INTEGER PRIMARY KEY AUTO_INCREMENT,
         publish_date INT NOT NULL,
-        url DATE NOT NULL,
         title TEXT NOT NULL,
-        authors TEXT NOT NULL,
+        doi TEXT NOT NULL,
         abstract TEXT NOT NULL,
-        subcategory TEXT NOT NULL);
+        server TEXT NOT NULL,
+        category TEXT NOT NULL);
         """
     cursor.execute(create_articles_statement)
 
@@ -135,14 +142,15 @@ Adds whole DataFrame to the articles table
 def add_articles(connection, df):
     cursor = connection.cursor()
     print_verbose(df.columns)
-    insert_template = "INSERT INTO articles (publish_date, url, title, authors, abstract, subcategory) VALUES ({date},'{url}','{title}','{authors}','{abstract}','{subcategory}');"
+    insert_template = "INSERT INTO articles (publish_date, title, doi, abstract, server, category) VALUES " \
+                      "('{publish_date}', '{title}', '{doi}', '{abstract}', '{server}', '{category}');"
     for i in range(df.shape[0]):
-        insert_statement = insert_template.format(date=df.iloc[i,0],
-                                                  url=df.iloc[i,3],
-                                                  title=clean_for_sql(df.iloc[i,1]),
-                                                  authors=clean_for_sql(df.iloc[i,2]),
-                                                  abstract=clean_for_sql(df.iloc[i,4]),
-                                                  subcategory=clean_for_sql(df.iloc[i,5]))
+        insert_statement = insert_template.format(publish_date=df.iloc[i, 5],
+                                                  title=clean_for_sql(df.iloc[i, 1]),
+                                                  doi=clean_for_sql(df.iloc[i, 0]),
+                                                  abstract=clean_for_sql(df.iloc[i, 2]),
+                                                  server=clean_for_sql(df.iloc[i, 3]),
+                                                  category=clean_for_sql(df.iloc[i, 4]))
         print_verbose(insert_statement)
         cursor.execute(insert_statement)
     cursor.close()
@@ -215,27 +223,29 @@ def remove_duplicate_articles(connection, cursor):
                     cursor.execute(formatted_delete)
     # commit all the transactions
     connection.commit()
-if __name__ == "__main__":
 
+
+if __name__ == "__main__":
     start = time.time()
+    today = date.today()
+    todays_date = today.strftime("%Y-%m-%d")
 
     con = open_db()
     curs = con.cursor()
 
     # this deletes what is already in the DB and creates an empty one
-    # create_db(con)
+    create_db(con)
 
-    for f in listdir('aggregate-data/CSVs/'):
-        subcat = re.sub('\\.csv','',f)
-        print(subcat)
-        d = load_data('aggregate-data/CSVs/' + f)
-        d['subcategory'] = subcat
-        add_articles(con, d)
+    d = load_data('Data/processed_api_collected_article_data_{}.tsv'.format(todays_date))
+    # d = load_data('Data/processed_api_collected_article_data_2021-10-12.tsv')
 
     curs = con.cursor()
     print('Removing Duplicates')
     # remove_duplicate_articles(con, curs)
 
+    print('Adding')
+    # VERBOSE=True
+    add_articles(con, d)
     print('Time Spent Adding: ' + str(time.time() - start))
 
     print(curs.execute("SELECT article_id FROM articles"))

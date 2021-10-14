@@ -12,3 +12,4 @@ database/get-rds-dump.sh
 lambda-package/package
 __pycache__
 lambda.zip
+Data/
