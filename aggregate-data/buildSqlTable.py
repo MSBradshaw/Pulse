@@ -12,6 +12,7 @@ VERBOSE = False
 def clean_for_sql(string):
     string = string.replace("'", "''")
     string = string.replace('"', '""')
+    string = string.replace('\\', '\\\\')
     return string
 
 
