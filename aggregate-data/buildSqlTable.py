@@ -44,11 +44,18 @@ Returns a pandas DataFrame
 """
 
 
-def load_data(filepath):
+def load_biorxiv_data(filepath):
+
     df = pd.read_csv(filepath, sep='\t')
     print(df.shape)
     # df.columns = ['index', 'publish_date', 'title', 'authors', 'url', 'abstract']
-    df.columns = ['doi', 'title', 'abstract', 'server', 'category', 'publish_date']
+
+    df.columns = ['doi', 'title', 'authors', 'author_corresponding', 'author_corresponding_institution', 'publish_date',
+                  'version', 'type', 'license', 'category', 'jatsxml', 'abstract', 'published', 'server']
+
+    #df.columns = ['doi', 'title', 'abstract', 'server', 'category', 'publish_date']
+    # set a subset of columns
+    df = df[['doi', 'title', 'abstract', 'server', 'category', 'publish_date']]
 
     df['publish_date'] = [date_to_unix_time(x) for x in df['publish_date']]
     # df = df.drop(['index'], axis=1)
@@ -145,14 +152,25 @@ def add_articles(connection, df):
     insert_template = "INSERT INTO articles (publish_date, title, doi, abstract, server, category) VALUES " \
                       "('{publish_date}', '{title}', '{doi}', '{abstract}', '{server}', '{category}');"
     for i in range(df.shape[0]):
-        insert_statement = insert_template.format(publish_date=df.iloc[i, 5],
-                                                  title=clean_for_sql(df.iloc[i, 1]),
-                                                  doi=clean_for_sql(df.iloc[i, 0]),
-                                                  abstract=clean_for_sql(df.iloc[i, 2]),
-                                                  server=clean_for_sql(df.iloc[i, 3]),
-                                                  category=clean_for_sql(df.iloc[i, 4]))
-        print_verbose(insert_statement)
-        cursor.execute(insert_statement)
+        try:
+            if i % 1000 == 0:
+                print('Loading')
+                print(i)
+                print(df.shape[0])
+                print()
+            insert_statement = insert_template.format(publish_date=df.iloc[i, 5],
+                                                      title=clean_for_sql(df.iloc[i, 1]),
+                                                      doi=clean_for_sql(df.iloc[i, 0]),
+                                                      abstract=clean_for_sql(df.iloc[i, 2]),
+                                                      server=clean_for_sql(df.iloc[i, 3]),
+                                                      category=clean_for_sql(df.iloc[i, 4]))
+            print_verbose(insert_statement)
+            cursor.execute(insert_statement)
+        except pymysql.err.ProgrammingError as err:
+            print('SQL syntax error')
+            print(err)
+            print('The command:')
+            print(insert_statement)
     cursor.close()
     connection.commit()
 
@@ -236,8 +254,8 @@ if __name__ == "__main__":
     # this deletes what is already in the DB and creates an empty one
     create_db(con)
 
-    d = load_data('Data/processed_api_collected_article_data_{}.tsv'.format(todays_date))
-    # d = load_data('Data/processed_api_collected_article_data_2021-10-12.tsv')
+    # d = load_biorxiv_data('Data/processed_api_collected_article_data_{}.tsv'.format(todays_date))
+    d = load_biorxiv_data('Data/api_collected_data_2021-10-15.tsv')
 
     curs = con.cursor()
     print('Removing Duplicates')
