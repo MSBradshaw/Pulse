@@ -253,7 +253,7 @@ if __name__ == "__main__":
     curs = con.cursor()
 
     # this deletes what is already in the DB and creates an empty one
-    create_db(con)
+    # create_db(con)
 
     d = load_biorxiv_data('Data/processed_api_collected_article_data_{}.tsv'.format(todays_date))
     # d = load_biorxiv_data('Data/api_collected_data_2021-10-15.tsv')
